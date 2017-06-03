@@ -5,6 +5,9 @@ const uuidV1 = require('uuid/v1');
 var Result = require('../utils/Result');
 var _ = require('lodash');
 var cookie = require('cookie');
+var ccap = require('ccap');
+
+let validateCode='';
 router.post('/', function (req, res) {
   var user = Object.assign({},req.body);
   if(!user.id){
@@ -27,9 +30,9 @@ router.post('/', function (req, res) {
   }
 })
 
+
+
 router.get('/exists',function(req,res){
-  console.log("请求携带的cookie");
-  console.log(req.cookies);
   let {username} = req.query;
   res.setHeader('content-type','application/json;charset=utf-8');
   req.models.User.exists({username},(err,exists)=>{
@@ -42,18 +45,64 @@ router.get('/exists',function(req,res){
   })
 })
 
+function generateCode(length = 4){
+  const char = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F',
+  'G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+  let result =""
+  for(let i = 0;i<length;i++){
+    let pos = Math.ceil(Math.random()*35);
+    result+=char[pos];
+  }
+  return result;
+}
+router.get('/valicode',function(req,res){
+  let captcha = ccap({
+    width:150,
+    height:60,
+    offset:30,
+    quality:50,
+    fontsize:40,
+    generate:function(){
+      return generateCode(4);
+    }
+  })
+  arr = captcha.get();
+  validateCode = arr[0];
+  console.log(validateCode);
+  res.write(arr[1]);
+  res.end();
+})
+function checkValiCode(code=''){
+
+  return  code.toLowerCase() === validateCode.toLocaleLowerCase();
+}
 router.post('/login',function(req,res){
-  let {username,password} = req.body;
+  let error_time = req.cookies.error_time||0;
+  let {username,password,validateCode} = req.body;
   const hash = crypto.createHash('md5');
   let pass = hash.update(password).digest('hex');
 
   req.models.User.find({username}).all(function(err,items){
     let result = new Result();
+    if(error_time>2){
+      if(!checkValiCode(validateCode)){
+        return res.end(result.failed().setMsg('验证码错误！').toJSONString());
+      }
+    }
     if(err){
       res.end(result.failed().setMsg('网络异常，请稍后重试').toJSONString());
     }else if(items.length<1){
+      error_time =error_time +1;
+      res.cookie('error_time',error_time,{
+        domain:'127.0.0.1'
+      })
       res.end(result.failed().setMsg('用户名或者密码错误').toJSONString());
     }else if(pass!=items[0].password){
+
+      error_time++;
+      res.cookie('error_time',error_time,{
+        domain:'127.0.0.1'
+      })
       res.end(result.failed().setMsg('用户名或者密码错误').toJSONString());
     }else{
       var userData = _.omit(items[0],['avatar','password']);
@@ -61,6 +110,9 @@ router.post('/login',function(req,res){
       // console.log(userCookie);
       res.cookie('user',JSON.stringify(userData),{
         maxAge:20*60*1000,
+        domain:'127.0.0.1'
+      })
+      res.cookie('error_time',0,{
         domain:'127.0.0.1'
       })
       res.end(result.success().setMsg('成功').toJSONString());

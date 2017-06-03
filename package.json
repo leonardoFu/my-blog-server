@@ -19,6 +19,7 @@
     "serve-favicon": "~2.4.2"
   },
   "devDependencies": {
+    "ccap": "^0.6.10",
     "lodash": "^4.17.4",
     "uuid": "^3.0.1"
   }
