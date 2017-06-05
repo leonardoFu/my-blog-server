@@ -105,17 +105,23 @@ router.post('/login',function(req,res){
       })
       res.end(result.failed().setMsg('用户名或者密码错误').toJSONString());
     }else{
-      var userData = _.omit(items[0],['avatar','password']);
+      var userData = _.omit(items[0],['password']);
+      console.log(userData.avatar);
+      req.models.File.find({id:userData.avatar},function(err,file){
+        if(err) throw err;
+        console.log(file)
+        userData.avatar = file[0].url;
+        res.cookie('user',JSON.stringify(userData),{
+          maxAge:20*60*1000,
+          domain:'127.0.0.1'
+        })
+        res.cookie('error_time',0,{
+          domain:'127.0.0.1'
+        })
+        res.end(result.success().setMsg('登录成功').toJSONString());
+      })
       // var userCookie = cookie.serialize('user',)
       // console.log(userCookie);
-      res.cookie('user',JSON.stringify(userData),{
-        maxAge:20*60*1000,
-        domain:'127.0.0.1'
-      })
-      res.cookie('error_time',0,{
-        domain:'127.0.0.1'
-      })
-      res.end(result.success().setMsg('成功').toJSONString());
     }
   })
 })

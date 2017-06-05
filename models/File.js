@@ -1,6 +1,6 @@
 module.exports = function(orm,db){
   return db.define('files',{
-    id:{type:'text',required:true},
+    id:{type:'text',required:true,key:true},
     name:String,
     size:Number,
     url:String,
