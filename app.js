@@ -4,14 +4,18 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 var index = require('./routes/index');
 var user = require('./routes/user');
 var file = require('./routes/file');
-
+var article = require('./routes/article');
+var filter = require('./utils/filter');
+var admin = require('./routes/views');
 var orm = require('orm');
 var app = express();
 var database = require('./models');
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -24,6 +28,12 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(session({
+  secret:'leo',
+  resave: false,
+  saveUninitialized: true,
+  // cookie: { secure: false }
+}))
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 //解决跨域问题
@@ -32,15 +42,17 @@ app.all('*', function(req, res, next) {
   res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:8888');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , Set-Cookie');
   res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+  res.header('Content-Type','text/html;charset=UTF-8')
   next();
 });
 
-
 app.use(database);
+app.use(filter);
 app.use('/', index);
 app.use('/user', user);
 app.use('/file', file);
-
+app.use('/admin',admin);
+app.use('/articles',article);
 
 // app.use('/users', users);
 

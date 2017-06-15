@@ -1,0 +1,25 @@
+
+
+  <div class="page-header">
+    <h2>新增文章
+      <small>使用markdown</small>
+    </h2>
+  </div>
+  <div class="form-group">
+    <label for="article-title">文章标题</label>
+    <input type="text" id="article-title" class="form-control" placeholder="输入标题" aria-describedby="basic-addon1">
+  </div>
+  <!-- <div class="form-group"> -->
+    <!-- <label for="article-content">文章内容</label> -->
+  <textarea id ="article-content" name="content" class="form-control" data-provide="markdown" rows="30"></textarea>
+  <!-- </div> -->
+  <div class="checkbox publish-checkbox">
+    <label>
+      <input id = "article-publish" type="checkbox"> 是否发布
+    </label>
+  </div>
+  <div class="article-btn-group" role="group" aria-label="...">
+    <button type="button" id="article-back" class="btn btn-default">返回</button>
+    <button type="button" id="article-save" class="btn btn-success">保存</button>
+  </div>
+  <script src="/dist/js/article/publish.js" charset="utf-8"></script>

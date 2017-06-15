@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
-const crypto = require('crypto');
-const uuidV1 = require('uuid/v1');
+var crypto = require('crypto');
+var uuidV1 = require('uuid/v1');
 var Result = require('../utils/Result');
 var _ = require('lodash');
 var cookie = require('cookie');
@@ -11,8 +11,8 @@ let validateCode='';
 router.post('/', function (req, res) {
   var user = Object.assign({},req.body);
   if(!user.id){
-    const hash = crypto.createHash('md5');
-    let MD5Pass = hash.update(user.password).digest('hex');
+    var hash = crypto.createHash('md5');
+    var MD5Pass = hash.update(user.password).digest('hex');
     user.password = MD5Pass;
     user.id = uuidV1();
     req.models.User.create(user,function(err,items){
@@ -20,7 +20,6 @@ router.post('/', function (req, res) {
         console.log(err);
         res.end(JSON.stringify(err),'utf-8');
       }else{
-        console.log(items);
         res.end(JSON.stringify({
           error_code:200,
           message:'注册成功'
@@ -126,4 +125,14 @@ router.post('/login',function(req,res){
   })
 })
 
+router.post('/adminlogin',function(req,res){
+  var {username,password} = req.body;
+  var result = new Result();
+  if(username ==='leo'&&password ==='leoadmin'){
+    req.session.user = true;
+    res.end(result.success().setMsg('登录成功').toJSONString());
+  }else{
+    res.end(result.failed().setMsg('用户名或密码错误！').toJSONString());
+  }
+})
 module.exports = router;

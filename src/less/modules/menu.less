@@ -1,0 +1,32 @@
+#menu-wrapper{
+  position:fixed;
+  top:0;
+  bottom:0;
+  width:220px;
+  background: @primary-color-dark;
+  text-align: center;
+  .logo{
+    position:relative;
+    display: inline-block;
+    top:20px;
+    left:-5px;
+    border-radius: 10px;
+    width:100px;
+
+  }
+  h6{
+    position:relative;
+    top:10px;
+    color:#fff;
+    font-size:18px;
+  }
+}
+#menu-tree{
+  position:relative;
+  min-height:500px;
+  top: 30px;
+  text-align: left;
+}
+.node-menu-tree:not(.node-disabled):hover{
+  background-color: darken(@primary-color-dark,5%);
+}
