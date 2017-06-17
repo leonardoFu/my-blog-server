@@ -13,11 +13,14 @@ module.exports = function(orm,db){
   },{
     hooks:{
       beforeValidation:function(){
+        console.log(this.pv+','+this.comment_num);
         if(!this.created_time){
           this.created_time = new Date();
         }else{
           this.last_modified_time = new Date();
         }
+        this.pv = this.pv || 0;
+        this.comment_num = this.comment_num || 0;
       }
     }
   })

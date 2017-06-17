@@ -1,16 +1,50 @@
-@import url(../variable.less);
-
 #article-title{
   margin-bottom: 10px;
 }
+#article-keywords{
+  height: 42px;
+  width: 100%;
+  padding: 4px;
+  // background: rgba(204, 204, 204, 0.3);
+  border: 2px solid #bdc3c7;
+  .border-radius(6px);
+  vertical-align: baseline;
+}
+#add-keyword{
+  display: inline-block;
+  height: 30px;
+  width: 30px;
+  line-height: 30px;
+  background: @primary-color-light;
+  color: white;
+  text-align: center;
+  .border-radius;
+  cursor: pointer;
+}
+#add-keyword-input{
+  width:100px;
+  .line-height(30px);
+  outline:none;
+}
 .article-btn-group{
-  padding-top:10px;
+  padding-top: 10px;
   text-align: right;
   button{
-    margin-right:10px;
+    margin-right: 10px;
   }
 }
 .publish-checkbox{
   text-align: right;
-  padding-right:20px;
+  padding-right: 20px;
+}
+.article-keyword{
+  display: inline-block;
+  .line-height(30px);
+  margin: 0 2px;
+  padding: 0 .5rem;
+  transition: .5s background ease;
+  
+  &:hover{
+    background: @primary-color-dark;
+  }
 }

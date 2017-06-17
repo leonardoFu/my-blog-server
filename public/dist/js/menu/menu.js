@@ -904,5 +904,5 @@ if ($.support.pjax) {
 })(jQuery)
 
 },{}],2:[function(require,module,exports){
-var pjax=require("jquery-pjax"),tree=[{text:"首页",href:"/admin"},{text:"文章",nodes:[{text:"查看"},{text:"新增",href:"/admin/article"}]},{text:"Child 2"},{text:"Parent 2"},{text:"Parent 3"},{text:"Parent 4"},{text:"Parent 5"}];$("#menu-tree").treeview({data:tree,backColor:"#008151",showBorder:!1,onhoverColor:"#016b43",selectedBackColor:"#016b43",onNodeSelected:function(e,t){$.pjax({url:t.href,container:"#content"})},enableLinks:!1});
+var pjax=require("jquery-pjax"),tree=[{text:"首页",href:"/admin"},{text:"文章",nodes:[{text:"查看",href:"/admin/articles"},{text:"新增",href:"/admin/article"}]},{text:"Child 2"},{text:"Parent 2"},{text:"Parent 3"},{text:"Parent 4"},{text:"Parent 5"}];$("#menu-tree").treeview({data:tree,backColor:"#008151",showBorder:!1,onhoverColor:"#016b43",selectedBackColor:"#016b43",onNodeSelected:function(e,t){$.pjax({url:t.href,container:"#content"})},enableLinks:!1});
 },{"jquery-pjax":1}]},{},[2])

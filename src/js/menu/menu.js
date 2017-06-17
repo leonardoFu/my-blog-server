@@ -9,11 +9,12 @@ var tree = [
     text: "文章",
     nodes: [
       {
-        text: "查看"
+        text: "查看",
+        href: "/admin/articles"
       },
       {
         text: "新增",
-        href: '/admin/article',
+        href: "/admin/article",
       }
     ]
   },
