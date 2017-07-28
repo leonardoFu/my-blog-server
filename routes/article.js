@@ -4,42 +4,183 @@ var  uuidV1 = require('uuid/v1');
 var Result = require('../utils/Result');
 
 
-router.post('/',function(req,res){
+router.post('/',function(req, res){
   var article = Object.assign({},req.body);
+  var result = new Result();
   article.publish = Number.parseInt(article.publish);
-  if(!article.id){
+  var id = article.id;
+  if (!id) {
     article.id = uuidV1();
-    req.models.Article.create(article,function(err){
-      var result = new Result();
-      if(err){
+
+    req.models.Article.create(article, function(err){
+      if (err) {
         throw err;
         res.end(result.failed().setMsg('新增文章失败！').toJSONString());
       }else{
+        if(article.classId){
+          function cb(error, Cls){
+              Cls.count++;
+              Cls.save(function(err){
+              if(err) throw err;
+              console.log('新增分类成功');
+
+            })
+          };
+          req.models.ArticleCls.get(article.classId, cb)
+        }
         res.end(result.success().setMsg('新增文章成功').toJSONString());
       }
     })
+  } else {
+    　req.models.Article.get(id,function(err, old){
+        if (err) {
+          throw err;
+          res.end(result.failed().setMsg('修改文章失败！').toJSONString());
+        }
+        old.save(article,function(err){
+          if (err) throw err;
+          res.end(result.success().setMsg('修改文章成功！').toJSONString());
+        })
+
+      })
   }
 });
-router.get('/',function(req,res){
+
+router.get('/',function(req, res){
   var result = new Result();
-  req.models.Article.find().all(function(err,items){
+
+  req.models.Article.find().all(function(err, items){
     res.end(result.success().setData(items).toJSONString());
   })
 });
 
-router.post('/class',function(req,res){
+router.get('/article/:id',function(req, res){
   var result = new Result();
-  var articleCls = Object.assign({},req.body);
-  if(!articleCls.id){
-    articleCls.id = uuidV1();
-    req.models.ArticleCls.create(articleCls,function(err){
-      if(err){
+
+  req.models.Article.get(req.params.id,function(err, article){
+    if(err){
+      throw err;
+      res.end(result.failed().setMsg('获取文章信息失败').toJSONString())
+    }
+    res.end(result.success().setData(article).toJSONString());
+  });
+});
+
+router.delete('/article/:id',function(req,res){
+  var result = new Result();
+
+  req.models.Article.get(req.params.id,function(err,article){
+    if (err) {
+      throw err;
+      res.end(result.failed().setMsg('删除文章失败').toJSONString());
+      return;
+    }
+    article.remove(function(err){
+      if (err) {
         throw err;
-        res.end(result.failed().setMsg('新增文章失败！').toJSONString());
-      }else{
-        res.end(result.success().setMsg('新增文章成功').toJSONString());
+        res.end(result.failed().setMsg('删除文章失败').toJSONString());
+        return;
+      }
+      res.end(result.success().setMsg('删除成功').toJSONString());
+    })
+  })
+})
+
+router.get('/classes',function(req, res){
+  var result = new Result();
+  req.models.ArticleCls.find().all(function(err, items){
+    if (err) {
+      throw err;
+      return ;
+    }
+    res.end(result.success().setData(items).toJSONString());
+  })
+});
+
+
+router.get('/list',function(req, res){
+  var result = new Result(),
+       query = req.query,
+        page = (query.pageNum - 1)*10,
+       total = 0;
+  var param = {};
+  if(query.classId) param = {classId: query.classId};
+  req.models.Article.find(param).count(function(err,count){
+    total = count;
+  })
+  req.models.Article.find(param, ['created_time', 'Z'])
+    .limit(10)
+    .offset(page)
+    .run(function(err, articles){
+
+      if (err) {
+        throw err;
+        res.end(result.failed().setMsg('查询文章失败').toJSONString());
+      }
+      var classIds;
+      classIds = resolveClassIds(articles) || [];
+      req.models.ArticleCls.find().all(function(err, classes){
+        console.log(err);
+        console.log(classes);
+        articles = articles.map(function(val){
+          return Object.assign({}, val, {class: findCls(val.classId, classes)})
+        })
+        res.end(result.success().setData({
+          total:total,
+          articles:articles
+        }).toJSONString());
+      })
+    })
+});
+router.post('/class', function(req, res){
+  var result = new Result();
+  var articleCls = Object.assign({}, req.body);
+  if (!articleCls.id) {
+    articleCls.id = uuidV1();
+    req.models.ArticleCls.create(articleCls, function(err,newClass){
+      if (err) {
+        throw err;
+        res.end(result.failed().setMsg('新增文章分类失败！').toJSONString());
+      } else {
+        res.end(result.success().setData(articleCls.id).setMsg('新增文章分类成功').toJSONString());
       }
     })
   }
 });
+/**
+ * 删除文章分类
+ */
+router.delete('/class/:id',function(req, res){
+  var result = new Result();
+  var id = req.params.id;
+
+  req.models.ArticleCls.get(id, function(err, Cls){
+    if (err) throw err;
+
+    Cls.remove(function(err){
+      if (err) throw err;
+      res.end(result.success().setMsg('删除成功').toJSONString());
+    })
+
+  })
+})
+
+function resolveClassIds(articles){
+  if (!articles) {
+    return;
+  }
+  return articles.map(function(val){
+    return val.id;
+  })
+}
+
+function findCls(id,classes){
+  var result ;
+  classes.forEach(function(val){
+    if(val.id === id){
+      result = val;
+    }
+  })
+  return result || {};
+}
 module.exports = router;

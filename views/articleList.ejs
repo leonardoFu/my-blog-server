@@ -5,11 +5,14 @@
 </div>
 <div id = "articles-navbar">
   <ul id = "articles-navs">
-    <li class = "articles-nav"><span>全部</span></li>
-    <li class = "articles-nav"><span>分类1</span></li>
-    <li class = "articles-nav"><span>分类2</span></li>
-    <li class = "articles-nav"><span>分类3</span></li>
-    <li class = "articles-nav"><span>分类4</span></li>
+    <li class = "articles-nav" data-id = ""><span>全部</span></li>
+    <li class = "articles-nav" id = "articles-input">
+      <input type="text" id="articles-class-input" class = "hidden">
+    </li>
+    <li class = "articles-nav articles-addclass">
+      <i class="glyphicon glyphicon-plus">
+      </i>
+    </li>
   </ul>
 </div>
 <div class = "panel panel-default articles-list">
@@ -21,16 +24,16 @@
         <th>关键字</th>
         <th>创建时间</th>
         <th>最后修改时间</th>
+        <th>浏览次数</th>
         <th>操作</th>
       </thead>
       <tbody>
-        <td>1</td>
-        <td>1</td>
-        <td>2</td>
-        <td>3</td>
-        <td>3</td>
-        <td>3</td>
       </tbody>
     </table>
+    <nav id = "articles-pagination">
+      <ul class="pagination">
+      </ul>
+    </nav>
   </div>
 </div>
+<script src="/dist/js/article/list.js" charset="utf-8"></script>

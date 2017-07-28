@@ -4,6 +4,9 @@ var router = express.Router();
 router.get('/article',function(req,res){
   res.render('article');
 });
+router.get('/article/:id',function(req,res){
+  res.render('article');
+});
 router.get('/',function(req,res){
   res.render('index', { title: '管理系统' });
 });
