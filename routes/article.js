@@ -1,9 +1,10 @@
 var express = require('express');
 var router = express.Router();
-var  uuidV1 = require('uuid/v1');
+var uuidV1 = require('uuid/v1');
 var Result = require('../utils/Result');
-
-
+/**
+ * 新增/修改一篇文章
+ */
 router.post('/',function(req, res){
   var article = Object.assign({},req.body);
   var result = new Result();
@@ -50,22 +51,35 @@ router.get('/',function(req, res){
   var result = new Result();
 
   req.models.Article.find().all(function(err, items){
+    logger.debug('query articles', new Date());
     res.end(result.success().setData(items).toJSONString());
   })
 });
 
+/**
+ * 获取一篇文章的信息
+ */
 router.get('/article/:id',function(req, res){
   var result = new Result();
-
   req.models.Article.get(req.params.id,function(err, article){
     if(err){
       throw err;
       res.end(result.failed().setMsg('获取文章信息失败').toJSONString())
+    } else if(article && article.classId){
+      req.models.ArticleCls.get(article.classId, function(err, Cls){
+        if(err){
+          throw err;
+        }
+        article.articleCls = Cls || {};
+        res.end(result.success().setData(article).toJSONString());
+      })
     }
-    res.end(result.success().setData(article).toJSONString());
   });
 });
 
+/**
+ * 删除文章
+ */
 router.delete('/article/:id',function(req,res){
   var result = new Result();
 
@@ -132,6 +146,10 @@ router.get('/list',function(req, res){
       })
     })
 });
+
+/**
+ * 新增一个文章分类
+ */
 router.post('/class', function(req, res){
   var result = new Result();
   var articleCls = Object.assign({}, req.body);
@@ -147,6 +165,17 @@ router.post('/class', function(req, res){
     })
   }
 });
+
+router.get('/class/:id', function(req, res){
+  var result = new Result();
+  var id = req.param.id;
+
+  req.models.ArticleCls.get(id, function(err, Cls){
+    if(err) throw err;
+
+    res.end(result.success().setData(Cls).toJSONString());
+  })
+})
 /**
  * 删除文章分类
  */

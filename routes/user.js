@@ -111,7 +111,7 @@ router.post('/login',function(req,res){
         console.log(file)
         userData.avatar = file[0].url;
         res.cookie('user',JSON.stringify(userData),{
-          maxAge:20*60*1000,
+          maxAge:20 * 60 * 1000,
           domain:'127.0.0.1'
         })
         res.cookie('error_time',0,{
@@ -128,7 +128,7 @@ router.post('/login',function(req,res){
 router.post('/adminlogin',function(req,res){
   var {username,password} = req.body;
   var result = new Result();
-  if(username ==='leo'&&password ==='leoadmin'){
+  if(username === 'leo' && password === 'leoadmin'){
     req.session.user = true;
     res.end(result.success().setMsg('登录成功').toJSONString());
   }else{
