@@ -18,9 +18,9 @@ router.post('/', function (req, res) {
     req.models.User.create(user,function(err,items){
       if(err){
         console.log(err);
-        res.end(JSON.stringify(err),'utf-8');
+      return res.end(JSON.stringify(err),'utf-8');
       }else{
-        res.end(JSON.stringify({
+      return res.end(JSON.stringify({
           error_code:200,
           message:'注册成功'
         }))
@@ -37,10 +37,10 @@ router.get('/exists',function(req,res){
   req.models.User.exists({username},(err,exists)=>{
     let result = new Result();
     if(err){
-      res.end(JSON.stringify(result.failed().setMsg(err)));
+    return res.end(JSON.stringify(result.failed().setMsg(err)));
       return;
     }
-    res.end(JSON.stringify(result.success().setData({exists})));
+  return res.end(JSON.stringify(result.success().setData({exists})));
   })
 })
 
@@ -69,7 +69,7 @@ router.get('/valicode',function(req,res){
   validateCode = arr[0];
   console.log(validateCode);
   res.write(arr[1]);
-  res.end();
+return res.end();
 })
 function checkValiCode(code=''){
 
@@ -89,20 +89,20 @@ router.post('/login',function(req,res){
       }
     }
     if(err){
-      res.end(result.failed().setMsg('网络异常，请稍后重试').toJSONString());
+    return res.end(result.failed().setMsg('网络异常，请稍后重试').toJSONString());
     }else if(items.length<1){
       error_time =error_time +1;
       res.cookie('error_time',error_time,{
         domain:'127.0.0.1'
       })
-      res.end(result.failed().setMsg('用户名或者密码错误').toJSONString());
+    return res.end(result.failed().setMsg('用户名或者密码错误').toJSONString());
     }else if(pass!=items[0].password){
 
       error_time++;
       res.cookie('error_time',error_time,{
         domain:'127.0.0.1'
       })
-      res.end(result.failed().setMsg('用户名或者密码错误').toJSONString());
+    return res.end(result.failed().setMsg('用户名或者密码错误').toJSONString());
     }else{
       var userData = _.omit(items[0],['password']);
       console.log(userData.avatar);
@@ -117,7 +117,7 @@ router.post('/login',function(req,res){
         res.cookie('error_time',0,{
           domain:'127.0.0.1'
         })
-        res.end(result.success().setMsg('登录成功').toJSONString());
+      return res.end(result.success().setMsg('登录成功').toJSONString());
       })
       // var userCookie = cookie.serialize('user',)
       // console.log(userCookie);
@@ -130,9 +130,9 @@ router.post('/adminlogin',function(req,res){
   var result = new Result();
   if(username === 'leo' && password === 'leoadmin'){
     req.session.user = true;
-    res.end(result.success().setMsg('登录成功').toJSONString());
+    return res.end(result.success().setMsg('登录成功').toJSONString());
   }else{
-    res.end(result.failed().setMsg('用户名或密码错误！').toJSONString());
+    return res.end(result.failed().setMsg('用户名或密码错误！').toJSONString());
   }
 })
 module.exports = router;

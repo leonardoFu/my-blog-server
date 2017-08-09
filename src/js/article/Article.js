@@ -82,7 +82,7 @@ function Article(){
     };
     this.save = function(){
       var params = this.getArticle();
-      $.ajax({
+      return $.ajax({
         url:SERVER+'/articles',
         data:params,
         method:'POST'

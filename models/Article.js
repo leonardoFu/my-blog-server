@@ -1,5 +1,5 @@
-module.exports = function(orm,db){
-  return db.define('articles',{
+module.exports = function(orm, db){
+  return db.define('articles', {
     id: {type:'text',required:true,key:true},//文章主键
     title: String,//文章标题
     content: String,//文章内容
@@ -14,7 +14,6 @@ module.exports = function(orm,db){
   },{
     hooks:{
       beforeValidation:function(){
-        console.log(this.pv+','+this.comment_num);
         if(!this.created_time){
           this.created_time = new Date();
         }else{

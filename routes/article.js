@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var uuidV1 = require('uuid/v1');
 var Result = require('../utils/Result');
+var CommentUtil = require('../utils/CommentUtil');
+var async = require('async');
 /**
  * 新增/修改一篇文章
  */
@@ -16,7 +18,7 @@ router.post('/',function(req, res){
     req.models.Article.create(article, function(err){
       if (err) {
         throw err;
-        res.end(result.failed().setMsg('新增文章失败！').toJSONString());
+      return res.end(result.failed().setMsg('新增文章失败！').toJSONString());
       }else{
         if(article.classId){
           function cb(error, Cls){
@@ -29,18 +31,18 @@ router.post('/',function(req, res){
           };
           req.models.ArticleCls.get(article.classId, cb)
         }
-        res.end(result.success().setMsg('新增文章成功').toJSONString());
+      return res.end(result.success().setMsg('新增文章成功').toJSONString());
       }
     })
   } else {
     　req.models.Article.get(id,function(err, old){
         if (err) {
           throw err;
-          res.end(result.failed().setMsg('修改文章失败！').toJSONString());
+        return res.end(result.failed().setMsg('修改文章失败！').toJSONString());
         }
         old.save(article,function(err){
           if (err) throw err;
-          res.end(result.success().setMsg('修改文章成功！').toJSONString());
+        return res.end(result.success().setMsg('修改文章成功！').toJSONString());
         })
 
       })
@@ -52,7 +54,7 @@ router.get('/',function(req, res){
 
   req.models.Article.find().all(function(err, items){
     logger.debug('query articles', new Date());
-    res.end(result.success().setData(items).toJSONString());
+  return res.end(result.success().setData(items).toJSONString());
   })
 });
 
@@ -61,20 +63,32 @@ router.get('/',function(req, res){
  */
 router.get('/article/:id',function(req, res){
   var result = new Result();
-  req.models.Article.get(req.params.id,function(err, article){
-    if(err){
-      throw err;
-      res.end(result.failed().setMsg('获取文章信息失败').toJSONString())
-    } else if(article && article.classId){
-      req.models.ArticleCls.get(article.classId, function(err, Cls){
-        if(err){
-          throw err;
-        }
-        article.articleCls = Cls || {};
-        res.end(result.success().setData(article).toJSONString());
-      })
+  async.waterfall([
+    function(cb){
+      req.models.Article.get(req.params.id,function(err, article){
+        cb(err, article);
+      });
+    },
+    function(article, cb){
+      if(article && article.classId){
+        req.models.ArticleCls.get(article.classId, function(err, Cls){
+          article.articleCls = Cls || {};
+          cb(err, article);
+        });
+      }
+    },
+    function(article, cb){
+      req.models.Comment.find({ article_id: req.params.id }, ['created_time', 'Z'], function(err, comments){
+        article.comments = CommentUtil.generateReference(comments);
+        cb(err, article);
+      });
     }
-  });
+  ], function(err, article){
+    if(err){
+    return res.end(result.failed().setMsg(err.message).toJSONString());
+    }
+  return res.end(result.success().setData(article).toJSONString());
+  })
 });
 
 /**
@@ -86,16 +100,16 @@ router.delete('/article/:id',function(req,res){
   req.models.Article.get(req.params.id,function(err,article){
     if (err) {
       throw err;
-      res.end(result.failed().setMsg('删除文章失败').toJSONString());
+    return res.end(result.failed().setMsg('删除文章失败').toJSONString());
       return;
     }
     article.remove(function(err){
       if (err) {
         throw err;
-        res.end(result.failed().setMsg('删除文章失败').toJSONString());
+      return res.end(result.failed().setMsg('删除文章失败').toJSONString());
         return;
       }
-      res.end(result.success().setMsg('删除成功').toJSONString());
+    return res.end(result.success().setMsg('删除成功').toJSONString());
     })
   })
 })
@@ -107,7 +121,7 @@ router.get('/classes',function(req, res){
       throw err;
       return ;
     }
-    res.end(result.success().setData(items).toJSONString());
+  return res.end(result.success().setData(items).toJSONString());
   })
 });
 
@@ -129,7 +143,7 @@ router.get('/list',function(req, res){
 
       if (err) {
         throw err;
-        res.end(result.failed().setMsg('查询文章失败').toJSONString());
+      return res.end(result.failed().setMsg('查询文章失败').toJSONString());
       }
       var classIds;
       classIds = resolveClassIds(articles) || [];
@@ -139,7 +153,7 @@ router.get('/list',function(req, res){
         articles = articles.map(function(val){
           return Object.assign({}, val, {class: findCls(val.classId, classes)})
         })
-        res.end(result.success().setData({
+      return res.end(result.success().setData({
           total:total,
           articles:articles
         }).toJSONString());
@@ -158,9 +172,9 @@ router.post('/class', function(req, res){
     req.models.ArticleCls.create(articleCls, function(err,newClass){
       if (err) {
         throw err;
-        res.end(result.failed().setMsg('新增文章分类失败！').toJSONString());
+      return res.end(result.failed().setMsg('新增文章分类失败！').toJSONString());
       } else {
-        res.end(result.success().setData(articleCls.id).setMsg('新增文章分类成功').toJSONString());
+      return res.end(result.success().setData(articleCls.id).setMsg('新增文章分类成功').toJSONString());
       }
     })
   }
@@ -173,7 +187,7 @@ router.get('/class/:id', function(req, res){
   req.models.ArticleCls.get(id, function(err, Cls){
     if(err) throw err;
 
-    res.end(result.success().setData(Cls).toJSONString());
+  return res.end(result.success().setData(Cls).toJSONString());
   })
 })
 /**
@@ -188,7 +202,33 @@ router.delete('/class/:id',function(req, res){
 
     Cls.remove(function(err){
       if (err) throw err;
-      res.end(result.success().setMsg('删除成功').toJSONString());
+      return res.end(result.success().setMsg('删除成功').toJSONString());
+    })
+
+  })
+})
+
+/**
+ * 新增评论
+ */
+router.post('/comment', function(req, res){
+  var result = new Result();
+  var newComment = Object.assign({}, req.body);
+  newComment.id = uuidV1();
+  req.models.Comment.create(newComment, function(err, item){
+    if(err) {
+      return res.end(result.failed().setMsg('评论失败').toJSONString())
+      throw err;
+    }
+    req.models.Comment.find({ article_id: newComment.article_id }, ['created_time', 'Z'], function(err, comments){
+      if(err){
+        throw err;
+      }
+      comments = CommentUtil.generateReference(comments);
+      req.models.Article.get(newComment.article_id, function(err, article){
+        article.comments = comments;
+        return res.end(result.success().setData(article).toJSONString());
+      })
     })
 
   })

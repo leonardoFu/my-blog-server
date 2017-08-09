@@ -1,5 +1,5 @@
 {
-  "ecmaVersion": 6,
+  "ecmaVersion": "7",
   "libs": [
     "jquery"
   ],
@@ -18,6 +18,11 @@
     "commonjs": {},
     "complete_strings": {
       "maxLength": 15
+    },
+    "modules": {
+      "dontLoad": "",
+      "load": "",
+      "modules": ""
     }
   }
 }

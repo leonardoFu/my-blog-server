@@ -22,7 +22,7 @@ router.post('/', upload.single('avatar'), function (req, res, next) {
       var result = new Result();
       if(err){
         result.failed().setMsg('新增文件失败！');
-        res.end(JSON.stringify(result));
+      return res.end(JSON.stringify(result));
         return;
       }
       result.success().setData({
@@ -32,7 +32,7 @@ router.post('/', upload.single('avatar'), function (req, res, next) {
           url:items.url
         }
       })
-      res.end(JSON.stringify(result));
+    return res.end(JSON.stringify(result));
     });
 
   });
@@ -44,7 +44,7 @@ router.delete('/',function(req,res){
     var result = new Result();
     res.setHeader('content-type','application/json;charset=utf-8');
     if (err){
-      res.end(JSON.stringify(result.faild().setMsg(err)));
+    return res.end(JSON.stringify(result.faild().setMsg(err)));
       return;
     }
     var filePath = 'public/'+req.body.url;
@@ -53,7 +53,7 @@ router.delete('/',function(req,res){
       if(exist){
           fs.unlink(filePath);
       }
-        res.end(JSON.stringify(result.success()));
+      return res.end(JSON.stringify(result.success()));
     })
 
   })
