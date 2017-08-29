@@ -61,7 +61,9 @@ function init(){
 
   $('#article-save').click(function(e){
     $(e.target).attr('disabled',true);
-    article.save();
+    article.save().then(function(){
+      $.pjax({url: '/admin/articles', container: '#content'})
+    });
   });
 
   $('#add-keyword').click(function(e){
@@ -94,7 +96,7 @@ function initForEdit(id){
     var title = data.title || '',
      keywords = data.keywords ? data.keywords.split(',') : [],
       content = data.content || '',
-      publish = data.publish || '',
+      publish = data.publish || false,
   description = data.description || '',
       classId = data.classId || '';
       id = data.id || '';
@@ -102,7 +104,7 @@ function initForEdit(id){
       //给各个组件赋初始值
       $('#article-title').val(title);
       $('#article-content').val(content);
-      $('#article-publish').attr('checked',content);
+      $('#article-publish').attr('checked',publish);
       $('#article-class').val(classId);
       $('#article-description').val(description);
 

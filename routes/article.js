@@ -87,7 +87,7 @@ router.get('/article/:id',function(req, res){
     if(err){
     return res.end(result.failed().setMsg(err.message).toJSONString());
     }
-  return res.end(result.success().setData(article).toJSONString());
+    return res.end(result.success().setData(article).toJSONString());
   })
 });
 

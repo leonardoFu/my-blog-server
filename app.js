@@ -48,14 +48,24 @@ app.use(session({
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+var ALLOW_ORIGINS = [
+  'http://127.0.0.1:8888',
+  'http://127.0.0.1:3001'
+]
 //解决跨域问题
 app.all('*', function(req, res, next) {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Origin', 'http://127.0.0.1:8888');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , Set-Cookie');
-  res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
-  res.header('Content-Type','text/html;charset=UTF-8')
-  next();
+  var origin = req.headers.origin;
+  if(ALLOW_ORIGINS.indexOf(origin) >= 0){
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , Set-Cookie');
+    res.header('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+    res.header('Content-Type','text/html;charset=UTF-8')
+    next();
+  } else {
+    res.end('非法请求');
+  }
 });
 
 app.use(database);
