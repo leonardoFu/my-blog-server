@@ -11,16 +11,16 @@ var result = function(){
     this.error_code = 400;
     return this;
   };
-  this.unLogged = function(){
+  this.unLogged = function() {
     this.error_code = 401;
     this.message = '未登录！'
     return this;
   }
-  this.setMsg = function(message){
+  this.setMsg = function(message) {
     this.message = message;
     return this;
   }
-  this.setData = function(data){
+  this.setData = function(data) {
     this.data = data;
     return this;
   }

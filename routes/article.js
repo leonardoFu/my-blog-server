@@ -200,7 +200,7 @@ router.get('/class/:id', function(req, res){
 /**
  * 删除文章分类
  */
-router.delete('/class/:id',function(req, res){
+router.delete('/class/:id',function(req, res) {
   var result = new Result();
   var id = req.params.id;
 
@@ -215,6 +215,50 @@ router.delete('/class/:id',function(req, res){
   })
 })
 
+/**
+ * 批量删除文章
+ */
+router.delete('/classes', function (req, res) {
+  var result = new Result();
+  var delIds = req.body || [];
+  var countObj = {};
+  async.waterfall([
+    function(callback) {
+      let articles = req.models.Article.find({id: delIds})
+      articles.each(function(article) {
+        if(countObj[article.classId]) {
+          countObj[article.classId] ++;
+        } else {
+          countObj[article.classId] = 1;
+        }
+      });
+      articles.remove(function(err) {
+        if (err) {
+          callback(err);
+        } else {
+          callback(null, articles);
+        }
+      })
+    },
+    function(articles, callback) {
+
+      req.models.ArticleCls.find({id: Object.keys(countObj)}).each(function(cls) {
+        cls.count -= countObj[cls.id] || 0;
+      }).save(function(err){
+        callback(err);
+      })
+    },
+    function(err) {
+      if(err.length) {
+        return res.end(result.failed().setMsg(err).toJSONString());
+      }
+      return res.end(result.success().setMsg('删除成功').toJSONString());
+    }
+  ])
+
+
+
+})
 /**
  * 新增评论
  */
