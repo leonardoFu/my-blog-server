@@ -130,13 +130,20 @@ router.get('/list',function(req, res){
   var result = new Result(),
        query = req.query,
         page = (query.pageNum - 1)*10,
+        order = query.order,
+        orderBy = query.orderBy,
        total = 0;
   var param = {};
   if(query.classId) param = {classId: query.classId};
   req.models.Article.find(param).count(function(err,count){
     total = count;
   })
-  req.models.Article.find(param, ['created_time', 'Z'])
+  var orderCond;
+  if(order && orderBy) {
+    orderCond = [orderBy, order === 'desc' ? 'Z' : 'A'];
+  }
+
+  req.models.Article.find(param, orderCond || ['created_time', 'Z'])
     .limit(10)
     .offset(page)
     .run(function(err, articles){
