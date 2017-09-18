@@ -1,51 +1,83 @@
-var express = require('express');
-var router = express.Router();
-var uuidV1 = require('uuid/v1');
-var Result = require('../utils/Result');
 var CommentUtil = require('../utils/CommentUtil');
+var Result = require('../utils/Result');
+
 var async = require('async');
+var express = require('express');
+const logger = require('log4js').getLogger();
+const errLogger = require('log4js').getLogger('error');
+var uuidV1 = require('uuid/v1');
+var router = express.Router();
 /**
  * 新增/修改一篇文章
  */
 router.post('/',function(req, res){
   var article = Object.assign({},req.body);
-  var result = new Result();
+
   article.publish = Number.parseInt(article.publish);
   var id = article.id;
   if (!id) {
     article.id = uuidV1();
-
-    req.models.Article.create(article, function(err){
-      if (err) {
-        throw err;
-      return res.end(result.failed().setMsg('新增文章失败！').toJSONString());
-      }else{
-        if(article.classId){
-          function cb(error, Cls){
-              Cls.count++;
-              Cls.save(function(err){
-              if(err) throw err;
-              console.log('新增分类成功');
-
-            })
-          };
-          req.models.ArticleCls.get(article.classId, cb)
-        }
-      return res.end(result.success().setMsg('新增文章成功').toJSONString());
-      }
-    })
-  } else {
-    　req.models.Article.get(id,function(err, old){
-        if (err) {
-          throw err;
-        return res.end(result.failed().setMsg('修改文章失败！').toJSONString());
-        }
-        old.save(article,function(err){
-          if (err) throw err;
-        return res.end(result.success().setMsg('修改文章成功！').toJSONString());
+    async.waterfall([
+      function(callback) {
+        req.models.Article.create(article, function(err){
+          if(err) {
+            return callback(err);
+          }
+          callback();
         })
+      },
+      function(callback) {
+        req.models.ArticleCls.get(article.classId, function(err, articleCls) {
+          if(err) {
+            return callback(err);
+          }
+          if(articleCls.count) {
+            articleCls.count++;
+          }
 
-      })
+          callback(null, articleCls);
+        })
+      },
+      function(articleCls, callback) {
+        articleCls.save(function(err) {
+          if(err) {
+            return callback(err);
+          }
+          callback();
+        })
+      }
+    ],
+    function(err) {
+      var result = new Result();
+      if(err) {
+        errLogger.error(err.message);
+        return res.end(result.failed().setMsg(err.message).toJSONString());
+      }
+      return res.end(result.success().setMsg('新增文章成功').toJSONString());
+    });
+
+  } else {
+    async.waterfall([
+      function(callback) {
+        req.models.Article.get(id,function(err, old) {
+          if(err) return callback(err);
+          callback(null, old);
+        })
+      },
+      function(oldArticle, callback) {
+        old.save(Object.assign(old, article), function(err) {
+          if(err) return callback(err);
+          callback();
+        })
+      }
+    ],
+    function(err) {
+      if(err) {
+        errLogger.error(err.message);
+        return res.end(result.failed().setMsg('修改文章失败！').toJSONString());
+      }
+      return res.end(result.success().setMsg('修改文章成功！').toJSONString());
+    });
   }
 });
 
@@ -84,35 +116,42 @@ router.get('/article/:id',function(req, res){
       });
     }
   ], function(err, article){
-    if(err){
-    return res.end(result.failed().setMsg(err.message).toJSONString());
-    }
-    return res.end(result.success().setData(article).toJSONString());
-  })
+      if(err){
+        errLogger.error(err.message);
+        return res.end(result.failed().setMsg(err.message).toJSONString());
+      }
+        return res.end(result.success().setData(article).toJSONString());
+    })
 });
 
 /**
  * 删除文章
  */
-router.delete('/article/:id',function(req,res){
+router.delete('/article/:id',function(req,res) {
   var result = new Result();
 
-  req.models.Article.get(req.params.id,function(err,article){
-    if (err) {
-      throw err;
-    return res.end(result.failed().setMsg('删除文章失败').toJSONString());
-      return;
+  async.waterfall([
+    function(callback) {
+      req.models.Article.get(req.params.id,function(err,article) {
+        if(err) return callback(err);
+        callback(null, article);
+      })
+    },
+    function(article, callback) {
+      article.remove(function(err) {
+        if(err) return callback(err);
+        callback();
+      })
     }
-    article.remove(function(err){
-      if (err) {
-        throw err;
+  ],
+  function(err) {
+    if (err) {
+      errLogger.error(err.message);
       return res.end(result.failed().setMsg('删除文章失败').toJSONString());
-        return;
-      }
+    }
     return res.end(result.success().setMsg('删除成功').toJSONString());
-    })
   })
-})
+});
 
 router.get('/classes',function(req, res){
   var result = new Result();
@@ -131,41 +170,57 @@ router.get('/list',function(req, res){
        query = req.query,
         page = (query.pageNum - 1)*10,
         order = query.order,
-        orderBy = query.orderBy,
-       total = 0;
+        orderBy = query.orderBy;
+
   var param = {};
   if(query.classId) param = {classId: query.classId};
-  req.models.Article.find(param).count(function(err,count){
-    total = count;
-  })
   var orderCond;
   if(order && orderBy) {
     orderCond = [orderBy, order === 'desc' ? 'Z' : 'A'];
   }
-
-  req.models.Article.find(param, orderCond || ['created_time', 'Z'])
-    .limit(10)
-    .offset(page)
-    .run(function(err, articles){
-
-      if (err) {
-        throw err;
-      return res.end(result.failed().setMsg('查询文章失败').toJSONString());
-      }
-      var classIds;
-      classIds = resolveClassIds(articles) || [];
-      req.models.ArticleCls.find().all(function(err, classes){
-        console.log(err);
-        console.log(classes);
-        articles = articles.map(function(val){
-          return Object.assign({}, val, {class: findCls(val.classId, classes)})
-        })
-      return res.end(result.success().setData({
-          total:total,
-          articles:articles
-        }).toJSONString());
+  async.parallel({
+    total: function(callback) {
+      req.models.Article.find(param).count(function(err,count){
+        if(err) return callback(err);
+        callback(null, count);
       })
-    })
+    },
+    articles: function(callback) {
+      async.waterfall([
+        function(callback2) {
+          req.models.Article.find(param, orderCond || ['created_time', 'Z'])
+            .limit(10)
+            .offset(page)
+            .run(function(err, articles){
+              if(err) return callback2(err);
+
+              var classIds;
+              classIds = resolveClassIds(articles) || [];
+              callback2(null, classIds, articles);
+            })
+        },
+        function(classIds, articles, callback2) {
+          req.models.ArticleCls.find().all(function(err, classes){
+            if(err) return callback2(err);
+            articles = articles.map(function(val){
+              return Object.assign({}, val, {class: findCls(val.classId, classes)})
+            })
+            callback2(null, articles);
+          })
+        }
+      ],
+      function(err, result) {
+        if(err) return callback(err);
+        callback(null, result);
+      })
+    }
+  }, function(err, results) {
+    if(err) {
+      errLogger.error(err.message);
+      return res.end(result.failed().setMsg('查询文章失败').toJSONString());
+    }
+    return res.end(result.success().setData(results).toJSONString());
+  })
 });
 
 /**
@@ -197,6 +252,7 @@ router.get('/class/:id', function(req, res){
   return res.end(result.success().setData(Cls).toJSONString());
   })
 })
+
 /**
  * 删除文章分类
  */
@@ -266,24 +322,44 @@ router.post('/comment', function(req, res){
   var result = new Result();
   var newComment = Object.assign({}, req.body);
   newComment.id = uuidV1();
-  req.models.Comment.create(newComment, function(err, item){
-    if(err) {
-      return res.end(result.failed().setMsg('评论失败').toJSONString())
-      throw err;
-    }
-    req.models.Comment.find({ article_id: newComment.article_id }, ['created_time', 'Z'], function(err, comments){
-      if(err){
-        throw err;
-      }
-      comments = CommentUtil.generateReference(comments);
-      req.models.Article.get(newComment.article_id, function(err, article){
-        article.comments = comments;
-        return res.end(result.success().setData(article).toJSONString());
+  async.series({
+    findComments: function(callback) {
+      req.models.Comment.create(newComment, function(err, item){
+        if(err) return callback(err);
+        callback();
       })
-    })
-
-  })
-})
+    },
+    article: function(callback) {
+      async.parallel({
+        comments: function(callback2) {
+          req.models.Comment.find({ article_id: newComment.article_id }, ['created_time', 'Z'], function(err, comments){
+            if(err) return callback2(err);
+            comments = CommentUtil.generateReference(comments);
+            callback2(null, comments);
+          })
+        },
+        article: function(callback2) {
+          req.models.Article.get(newComment.article_id, function(err, article){
+            if(err) return callback2(err);
+            callback2(null, article);
+          })
+        }
+      },
+      function(err, results) {
+        if(err) return callback(err);
+        let article = Object.assign(results.article, { comments: results.comments });
+        callback(null, article);
+      })
+    }
+  },
+  function(err, results) {
+    if(err) {
+      errLogger.error(err.message);
+      return res.end(result.failed().setMsg(err.message).toJSONString())
+    }
+    return res.end(result.success().setData(results.article).toJSONString());
+  });
+});
 
 function resolveClassIds(articles){
   if (!articles) {

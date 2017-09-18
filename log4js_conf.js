@@ -5,16 +5,20 @@ log4js.configure({
     access: {
       type: 'dateFile',
       filename: 'log/access',
-      pattern: '.yyyy-MM-dd-hh',
+      pattern: '.yyyy-MM-dd',
       alwaysIncludePattern: true
     },
-    errors: {
+    stdout: {
+      type: 'console'
+    },
+    error: {
       type: 'console'
     }
   },
   categories: {
     access: { appenders: ['access'], level: 'debug' },
-    default: { appenders: ['errors'], level: 'debug' }
+    default: { appenders: ['stdout'], level: 'debug' },
+    error: {appenders: ['error', 'access'], level: 'error'}
   }
 })
 
